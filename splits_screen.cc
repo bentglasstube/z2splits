@@ -214,15 +214,17 @@ void SplitsScreen::draw_time(
   }
 
   const int hours = ms / 3600000;
-  const int minutes = (ms / 60000) % 60;
+  const int minutes = ms / 60000;
   const int seconds = (ms / 1000) % 60;
   const int tenths = (ms / 100) % 10;
 
-  if (minutes > 0 || hours > 0) {
-    if (hours > 0) {
-      out << hours << ':' << std::setw(2) << std::setfill('0');
+  if (minutes > 0) {
+    if (minutes > 99) {
+      out << hours << ':';
+      out << std::setw(2) << std::setfill('0') << (minutes % 60) << ':';
+    } else {
+      out << minutes << ':';
     }
-    out << minutes << ':';
     out << std::setw(2) << std::setfill('0') << seconds;
   } else {
     out << seconds << '.' << tenths;
