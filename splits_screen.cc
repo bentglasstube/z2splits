@@ -1,79 +1,120 @@
 #include "splits_screen.h"
 
 #include <cstdlib>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 
-static const SDL_Scancode KEY_NEXT = SDL_SCANCODE_SPACE;
-static const SDL_Scancode KEY_ERASE = SDL_SCANCODE_ESCAPE;
-
 void SplitsScreen::init() {
-  index_ = time_ = 0;
-  running_ = false;
-
   text_.reset(new Text("text.png"));
-  bosses_.reset(new SpriteMap("bosses.png", 8, 32, 48));
+  maps_.reset(new SpriteMap("maps.png", 1, 256, 64));
+  fairy_.reset(new SpriteMap("fairy.png", 2, 8, 16));
+  triforce_.reset(new SpriteMap("triforce.png", 3, 8, 16));
+
+  visible_ = 15;
+
+  reset();
 }
 
-bool SplitsScreen::load_splits(const std::string& file) {
+bool SplitsScreen::load(const std::string& file) {
   file_ = file;
+  splits_.clear();
 
-  title_ = "Zelda 2 Randomizer";
+  std::ifstream in(file);
 
-  splits_.emplace_back("Gem 1");
-  splits_.emplace_back("Gem 2");
-  splits_.emplace_back("Gem 3");
-  splits_.emplace_back("Gem 4");
-  splits_.emplace_back("Gem 5");
-  splits_.emplace_back("Gem 6");
-  splits_.emplace_back("Dark Link");
+  in >> delay_;
+  std::getline(in, title_);
+
+  std::string name;
+  unsigned int hint, best;
+
+  while (true) {
+    if (in >> hint >> best) {
+      std::getline(in, name);
+      splits_.emplace_back(name, hint, best);
+    } else {
+      break;
+    }
+  }
+
+  reset();
 
   return true;
 }
 
+void SplitsScreen::save() {
+  std::ofstream out(file_);
+
+  if (out.is_open()) {
+    out << delay_ << title_ << "\n";
+    for (size_t i = 0; i < splits_.size(); ++i) {
+      Split s = splits_[i];
+      if (s.current < s.best || s.best == 0) s.best = s.current;
+      out << s.hint << " " << s.best << s.name << "\n";
+    }
+
+    out.close();
+  }
+}
+
 bool SplitsScreen::update(const Input& input, Audio&, unsigned int elapsed) {
   if (running_) {
-    splits_[index_].current += elapsed;
     time_ += elapsed;
+    splits_[index_].current = time_;
 
     if (input.key_pressed(SDL_SCANCODE_SPACE)) next();
     if (input.key_pressed(SDL_SCANCODE_BACKSPACE)) back();
     if (input.key_pressed(SDL_SCANCODE_RETURN)) stop();
-
-    if (input.key_pressed(SDL_SCANCODE_1)) toggle_boss(0);
-    if (input.key_pressed(SDL_SCANCODE_2)) toggle_boss(1);
-    if (input.key_pressed(SDL_SCANCODE_3)) toggle_boss(2);
-    if (input.key_pressed(SDL_SCANCODE_4)) toggle_boss(3);
-    if (input.key_pressed(SDL_SCANCODE_5)) toggle_boss(4);
-    if (input.key_pressed(SDL_SCANCODE_6)) toggle_boss(5);
-    if (input.key_pressed(SDL_SCANCODE_7)) toggle_boss(6);
+    if (input.key_pressed(SDL_SCANCODE_TAB)) skip();
 
   } else {
     if (input.key_pressed(SDL_SCANCODE_SPACE)) go();
-    if (input.key_pressed(SDL_SCANCODE_ESCAPE)) reset();
   }
+
+  if (input.key_pressed(SDL_SCANCODE_ESCAPE)) reset();
+
+  if (input.key_pressed(SDL_SCANCODE_UP)) scroll_up();
+  if (input.key_pressed(SDL_SCANCODE_DOWN)) scroll_down();
 
   return true;
 }
 
 void SplitsScreen::draw(Graphics& graphics) const {
-  text_->draw(
-      graphics, title_, graphics.width() / 2, 8, Text::Alignment::CENTER);
+  text_->draw(graphics, title_, graphics.width() / 2, 8, Text::Alignment::CENTER);
 
   const int right = graphics.width() - 16;
 
-  unsigned int total = 0;
-  for (size_t i = 0; i < splits_.size(); ++i) {
-    const Split s = splits_[i];
+  for (size_t i = 0; i < visible_; ++i) {
+    if (i + offset_ >= splits_.size()) break;
+
+    const Split s = splits_[i + offset_];
     const int y = 16 * i + 40;
 
-    total += s.current;
+    if (i + offset_ == index_) fairy_->draw(graphics, (time_ / 64) % 2, 16, y);
 
-    text_->draw(graphics, s.name, 16, y);
+    text_->draw(graphics, s.name, 24, y);
 
-    if (i <= index_) draw_time(graphics, total, right, y);
+    if (s.best > 0) {
+      draw_time(graphics, s.best, right, y);
+
+      if (i + offset_ <= index_) {
+        draw_time(graphics, s.current - s.best, right - 80, y);
+        if (is_gold_split(i + offset_)) triforce_->draw(graphics, (time_ / 64) % 3, right - 76, y);
+      }
+
+    } else if (i + offset_ <= index_) {
+      if (s.current > 0) {
+        draw_time(graphics, s.current, right, y);
+      } else {
+        text_->draw(graphics, "-", right, y, Text::Alignment::RIGHT);
+      }
+    }
   }
+
+  maps_->draw(graphics, splits_[index_].hint, 8, graphics.height() - 72);
+
+  draw_time(graphics, time_, right, graphics.height() - 96);
 
   draw_corner(graphics, 1, 1);
   draw_corner(graphics, graphics.width() - 7, 1);
@@ -92,20 +133,20 @@ void SplitsScreen::draw(Graphics& graphics) const {
 
   draw_vline(graphics, 2, 32, graphics.height() - 41);
   draw_vline(graphics, graphics.width() - 6, 32, graphics.height() - 41);
-
-  for (int i = 0; i < 7; ++i) {
-    const int x = graphics.width() * (i + 1) / 8 - 16;
-    const int y = graphics.height() - 64;
-    if (killed_[i]) {
-      bosses_->draw(graphics, i + 8, x, y);
-      bosses_->draw(graphics, 7, x, y);
-    } else {
-      bosses_->draw(graphics, i, x, y);
-    }
-  }
 }
 
-SplitsScreen::Split::Split(const std::string& name) : name(name), current(0) {}
+SplitsScreen::Split::Split(const std::string& name, int hint, unsigned int best) :
+  name(name), current(0), best(best), hint(hint) {}
+
+bool SplitsScreen::is_gold_split(int split) const {
+  if (split >= index_) return false;
+  if (split == 0) return splits_[0].current < splits_[0].best;
+
+  const int current = splits_[split].current - splits_[split - 1].current;
+  const int best = splits_[split].best - splits_[split - 1].best;
+
+  return current < best;
+}
 
 void SplitsScreen::stop() {
   running_ = false;
@@ -113,9 +154,9 @@ void SplitsScreen::stop() {
 
 void SplitsScreen::reset() {
   running_ = false;
-  index_ = time_ = 0;
+  offset_ = index_ = 0;
   for (size_t i = 0; i < splits_.size(); ++i) splits_[i].current = 0;
-  for (int i = 0; i < 7; ++i) killed_[i] = false;
+  time_ = splits_[0].current = -delay_;
 }
 
 void SplitsScreen::go() {
@@ -124,22 +165,43 @@ void SplitsScreen::go() {
 
 void SplitsScreen::next() {
   ++index_;
+  scroll_offset();
 
-  if (index_ >= splits_.size()) stop();
+  if (index_ >= splits_.size()) {
+    save();
+    stop();
+  }
+}
+
+void SplitsScreen::skip() {
+  if (index_ < splits_.size()) {
+    splits_[index_].current = 0;
+    ++index_;
+    scroll_offset();
+  }
 }
 
 void SplitsScreen::back() {
   if (index_ > 0) {
-    splits_[index_ - 1].current += splits_[index_].current;
     splits_[index_].current = 0;
     --index_;
+    scroll_offset();
   } else {
     stop();
   }
 }
 
-void SplitsScreen::toggle_boss(int boss) {
-  killed_[boss] = !killed_[boss];
+void SplitsScreen::scroll_offset() {
+  if (offset_ + visible_ <= index_) offset_ = index_ - visible_ + 1;
+  if (offset_ > index_) offset_ = index_;
+}
+
+void SplitsScreen::scroll_up() {
+  if (offset_ > 0) --offset_;
+}
+
+void SplitsScreen::scroll_down() {
+  if (offset_ + visible_ < splits_.size()) ++offset_;
 }
 
 void SplitsScreen::draw_time(
@@ -152,15 +214,17 @@ void SplitsScreen::draw_time(
   }
 
   const int hours = ms / 3600000;
-  const int minutes = (ms / 60000) % 60;
+  const int minutes = ms / 60000;
   const int seconds = (ms / 1000) % 60;
   const int tenths = (ms / 100) % 10;
 
-  if (minutes > 0 || hours > 0) {
-    if (hours > 0) {
-      out << hours << ':' << std::setw(2) << std::setfill('0');
+  if (minutes > 0) {
+    if (minutes > 99) {
+      out << hours << ':';
+      out << std::setw(2) << std::setfill('0') << (minutes % 60) << ':';
+    } else {
+      out << minutes << ':';
     }
-    out << minutes << ':';
     out << std::setw(2) << std::setfill('0') << seconds;
   } else {
     out << seconds << '.' << tenths;

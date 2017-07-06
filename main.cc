@@ -6,14 +6,14 @@ int main(int, char**) {
   Game::Config config;
 
   config.graphics.title = "splits";
-  config.graphics.width = 256;
+  config.graphics.width = 272;
   config.graphics.height = 384;
   config.graphics.fullscreen = false;
 
   SplitsScreen *s = new SplitsScreen();
 
   // TODO load splits from command line
-  s->load_splits("tlozhacks.txt");
+  s->load("content/z2allkeys.txt");
 
   Game game(config);
   game.loop(s);

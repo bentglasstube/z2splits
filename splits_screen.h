@@ -15,7 +15,8 @@ class SplitsScreen : public Screen {
   public:
 
     void init();
-    bool load_splits(const std::string& file);
+    bool load(const std::string& file);
+    void save();
     bool update(const Input& input, Audio& audio, unsigned int elapsed);
 
     void draw(Graphics& graphics) const;
@@ -23,25 +24,31 @@ class SplitsScreen : public Screen {
   private:
 
     struct Split {
-      Split(const std::string& name);
+      Split(const std::string& name, int hint, unsigned int best);
       std::string name;
-      unsigned int current;
+      unsigned int current, best;
+      int hint;
     };
 
     std::string title_, file_;
     std::vector<Split> splits_;
-    unsigned int index_, time_;
-    bool running_, killed_[7];
+    unsigned int index_, offset_, time_, delay_, visible_;
+    bool running_;
     std::unique_ptr<Text> text_;
-    std::unique_ptr<SpriteMap> bosses_;
+    std::unique_ptr<SpriteMap> maps_, fairy_, triforce_;
+
+    bool is_gold_split(int split) const;
 
     void stop();
     void reset();
     void go();
     void next();
+    void skip();
     void back();
 
-    void toggle_boss(int boss);
+    void scroll_offset();
+    void scroll_up();
+    void scroll_down();
 
     void draw_time(Graphics& graphics, int ms, int x, int y) const;
 
