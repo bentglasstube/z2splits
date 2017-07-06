@@ -138,7 +138,7 @@ void SplitsScreen::draw(Graphics& graphics) const {
 SplitsScreen::Split::Split(const std::string& name, int hint, unsigned int best) :
   name(name), current(0), best(best), hint(hint) {}
 
-bool SplitsScreen::is_gold_split(int split) const {
+bool SplitsScreen::is_gold_split(size_t split) const {
   if (split >= index_) return false;
   if (split == 0) return splits_[0].current < splits_[0].best;
 

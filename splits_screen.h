@@ -37,7 +37,7 @@ class SplitsScreen : public Screen {
     std::unique_ptr<Text> text_;
     std::unique_ptr<SpriteMap> maps_, fairy_, triforce_;
 
-    bool is_gold_split(int split) const;
+    bool is_gold_split(size_t split) const;
 
     void stop();
     void reset();
