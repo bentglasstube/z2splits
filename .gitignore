@@ -1,1 +1,4 @@
 bazel-*
+.python-version
+*.zip
+*.tgz
