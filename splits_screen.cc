@@ -12,7 +12,7 @@ void SplitsScreen::init() {
   fairy_.reset(new SpriteMap("fairy.png", 2, 8, 16));
   triforce_.reset(new SpriteMap("triforce.png", 3, 8, 16));
 
-  visible_ = 15;
+  visible_ = 12;
 
   reset();
 }
