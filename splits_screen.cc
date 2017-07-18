@@ -12,7 +12,7 @@ void SplitsScreen::init() {
   fairy_.reset(new SpriteMap("fairy.png", 2, 8, 16));
   triforce_.reset(new SpriteMap("triforce.png", 3, 8, 16));
 
-  visible_ = 12;
+  visible_ = 19;
 
   reset();
 }
@@ -91,16 +91,16 @@ void SplitsScreen::draw(Graphics& graphics) const {
     const Split s = splits_[i + offset_];
     const int y = 16 * i + 40;
 
-    if (i + offset_ == index_) fairy_->draw(graphics, (time_ / 64) % 2, 16, y);
+    if (i + offset_ == index_) fairy_->draw(graphics, (time_ / 64) % 2, 12, y);
 
-    text_->draw(graphics, s.name, 24, y);
+    text_->draw(graphics, s.name, 16, y);
 
     if (s.best > 0) {
       draw_time(graphics, s.best, right, y);
 
       if (i + offset_ <= index_) {
-        draw_time(graphics, s.current - s.best, right - 80, y);
-        if (is_gold_split(i + offset_)) triforce_->draw(graphics, (time_ / 64) % 3, right - 76, y);
+        draw_time(graphics, s.current - s.best, right - 60, y);
+        if (is_gold_split(i + offset_)) triforce_->draw(graphics, (time_ / 64) % 3, right - 56, y);
       }
 
     } else if (i + offset_ <= index_) {
@@ -112,7 +112,7 @@ void SplitsScreen::draw(Graphics& graphics) const {
     }
   }
 
-  maps_->draw(graphics, splits_[index_].hint, 8, graphics.height() - 72);
+  maps_->draw(graphics, splits_[index_].hint, graphics.width() / 2 - 128, graphics.height() - 72);
 
   draw_time(graphics, time_, right, graphics.height() - 96);
 
