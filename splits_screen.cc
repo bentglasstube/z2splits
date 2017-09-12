@@ -99,8 +99,8 @@ void SplitsScreen::draw(Graphics& graphics) const {
       draw_time(graphics, s.best, right, y);
 
       if (i + offset_ <= index_) {
-        draw_time(graphics, s.current - s.best, right - 60, y);
-        if (is_gold_split(i + offset_)) triforce_->draw(graphics, (time_ / 64) % 3, right - 56, y);
+        draw_time(graphics, s.current - s.best, right - 76, y);
+        if (is_gold_split(i + offset_)) triforce_->draw(graphics, (time_ / 64) % 3, right - 72, y);
       }
 
     } else if (i + offset_ <= index_) {
