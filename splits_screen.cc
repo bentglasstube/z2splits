@@ -64,15 +64,18 @@ bool SplitsScreen::update(const Input& input, Audio&, unsigned int elapsed) {
     splits_[index_].current = time_;
 
     if (input.key_pressed(SDL_SCANCODE_SPACE)) next();
+    if (input.key_pressed(SDL_SCANCODE_F11)) next();
     if (input.key_pressed(SDL_SCANCODE_BACKSPACE)) back();
     if (input.key_pressed(SDL_SCANCODE_RETURN)) stop();
     if (input.key_pressed(SDL_SCANCODE_TAB)) skip();
 
   } else {
     if (input.key_pressed(SDL_SCANCODE_SPACE)) go();
+    if (input.key_pressed(SDL_SCANCODE_F11)) go();
   }
 
   if (input.key_pressed(SDL_SCANCODE_ESCAPE)) reset();
+  if (input.key_pressed(SDL_SCANCODE_F12)) reset();
 
   if (input.key_pressed(SDL_SCANCODE_UP)) scroll_up();
   if (input.key_pressed(SDL_SCANCODE_DOWN)) scroll_down();
