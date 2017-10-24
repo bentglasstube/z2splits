@@ -6,8 +6,8 @@ int main(int, char**) {
   Game::Config config;
 
   config.graphics.title = "splits";
-  config.graphics.width = 252;
-  config.graphics.height = 448;
+  config.graphics.width = 340;
+  config.graphics.height = 480;
   config.graphics.fullscreen = false;
 
   SplitsScreen *s = new SplitsScreen();
